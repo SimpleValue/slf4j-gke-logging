@@ -38,13 +38,15 @@
             (json/write-str (prepare log-message))))
 
 (defn print-loop
-  [{:keys [print-stream]}]
+  [{:keys [print-stream log?]}]
   (let [queue (de.simplevalue.slf4j.queue.QueueLogger/getQueue)]
     (loop []
       (let [log-message (.take queue)]
-        (print! (or print-stream
-                    System/err)
-                log-message))
+        (when ((or log? identity)
+               log-message)
+          (print! (or print-stream
+                      System/err)
+                  log-message)))
       (recur))))
 
 (defn start!
@@ -62,10 +64,15 @@
           "an error"
           (Exception.))
 
+  (.debug (org.slf4j.LoggerFactory/getLogger "test")
+          "debug")
+
   (print! System/out
           (.take
            (de.simplevalue.slf4j.queue.QueueLogger/getQueue)
            ))
 
-  (start! {})
+  (start! {:log? (fn [log-message]
+                   (not (#{"DEBUG" "TRACE"} (get log-message
+                                                 "level"))))})
   )
