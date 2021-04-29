@@ -37,22 +37,25 @@
   (.println print-stream
             (json/write-str (prepare log-message))))
 
+(defn log!
+  [log-message]
+  (print! System/err
+          log-message))
+
 (defn print-loop
-  [{:keys [print-stream log?]}]
+  [{:keys [log!]}]
   (let [queue (de.simplevalue.slf4j.queue.QueueLogger/getQueue)]
     (loop []
       (let [log-message (.take queue)]
-        (when ((or log? identity)
-               log-message)
-          (print! (or print-stream
-                      System/err)
-                  log-message)))
+        (log! log-message))
       (recur))))
 
 (defn start!
-  [{:keys [print-stream] :as params}]
+  [params]
   (let [thread (Thread. (fn []
-                          (print-loop params)))]
+                          (print-loop (merge
+                                       {:log! log!}
+                                       params))))]
     (.start thread)))
 
 (comment
