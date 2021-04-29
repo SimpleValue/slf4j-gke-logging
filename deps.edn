@@ -1,0 +1,2 @@
+{:deps {org.clojars.simplevalue/slf4j-queue {:mvn/version "0.1.0-SNAPSHOT"}
+        org.clojure/data.json {:mvn/version "2.2.2"}}}
