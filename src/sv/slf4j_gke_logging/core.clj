@@ -6,14 +6,28 @@
     (.setTimeZone (java.util.TimeZone/getTimeZone "UTC"))
     ))
 
+(defn stacktrace-str
+  [throwable]
+  (with-open [out (java.io.ByteArrayOutputStream.)
+              print-writer (java.io.PrintWriter. out)]
+    (.printStackTrace throwable
+                      print-writer)
+    (.flush print-writer)
+    (String. (.toByteArray out)
+             "UTF-8")))
+
 (defn prepare
   "https://cloud.google.com/logging/docs/structured-logging#special-payload-fields"
   [log-message]
   {:severity (get log-message
                   "level")
-   :message (get log-message
-                 "msg"
-                 "")
+   :textPayload (str (get log-message
+                          "msg"
+                          "")
+                     (when-let [throwable (get log-message
+                                               "throwable")]
+                       (str "\n"
+                            (stacktrace-str throwable))))
    :times (.format date-format
                    (get log-message
                         "timestamp"))})
@@ -43,6 +57,10 @@
 
   (.info (org.slf4j.LoggerFactory/getLogger "test")
          "a message")
+
+  (.error (org.slf4j.LoggerFactory/getLogger "test")
+          "an error"
+          (Exception.))
 
   (print! System/out
           (.take
